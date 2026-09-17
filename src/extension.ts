@@ -473,6 +473,43 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 				}
 				break;
 			}
+			case 'explain': {
+				if (!this.coreService.isConfigured()) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: 'LLM Coding Assistant is not configured. Please set up your API key first.'
+					});
+					return;
+				}
+
+				const codeContext = await this.coreService.getCodeContext();
+				if (!codeContext || !codeContext.selection) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: 'Please select code to explain first.'
+					});
+					return;
+				}
+
+				try {
+					const projectContext = await this.coreService.getProjectContext();
+					const response = await this.coreService.explainCode({
+						context: codeContext,
+						projectContext,
+					});
+
+					this._view.webview.postMessage({
+						type: 'explanation',
+						payload: { content: response.content }
+					});
+				} catch (error) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: `Failed to explain code: ${error}`
+					});
+				}
+				break;
+			}
 		}
 	}
 }

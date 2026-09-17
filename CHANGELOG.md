@@ -4,6 +4,20 @@ All notable changes to the "LLM Coding Assistant" extension will be documented i
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.0.3] - 2024-09-17
+
+### Added
+- Webview-based code explanation (select code, click "Explain Code" in header)
+- Explanation results displayed directly in chat sidebar
+- "Explain Code" button in webview header when code is selected
+
+### Changed
+- Header now shows "Explain Code" button when applicable
+- Improved webview message handling for explanations
+
+### Fixed
+- Fixed switch statement in webview message handler
+
 ## [0.0.2] - 2024-09-17
 
 ### Added

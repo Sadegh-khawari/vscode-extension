@@ -15,6 +15,7 @@ export interface Message {
     code: string;
     instruction: string;
   };
+  explanation?: string;
 }
 
 export function App() {
@@ -47,6 +48,16 @@ export function App() {
             code: message.payload.code,
             instruction: message.payload.instruction,
           },
+        }]);
+        setIsLoading(false);
+        setStatus('Ready');
+      } else if (message.type === 'explanation') {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: message.payload.content,
+          timestamp: new Date(),
+          explanation: message.payload.content,
         }]);
         setIsLoading(false);
         setStatus('Ready');
@@ -102,6 +113,13 @@ export function App() {
     });
   };
 
+  const handleExplainCode = () => {
+    vscode.postMessage({
+      type: 'explain',
+      payload: {}
+    });
+  };
+
   const handleCodeAction = (action: 'accept' | 'reject', codeBlock: Message['codeBlock']) => {
     vscode.postMessage({
       type: 'code-action',
@@ -111,7 +129,7 @@ export function App() {
 
   return (
     <div className="app">
-      <Header status={status} />
+      <Header status={status} onExplain={handleExplainCode} />
       <div className="messages-container">
         <MessageList messages={messages} onCodeAction={handleCodeAction} />
         <div ref={messagesEndRef} />
