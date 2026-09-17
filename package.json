@@ -1,0 +1,117 @@
+{
+  "name": "llm-coding-assistant",
+  "displayName": "LLM Coding Assistant",
+  "description": "A VSCode extension that connects to cloud LLMs for code generation, explanation, bug fixing, and project analysis using MCP.",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/llm-coding-assistant"
+  },
+  "categories": [
+    "AI",
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "llm",
+    "ai",
+    "code-generation",
+    "code-explanation",
+    "bug-fixing",
+    "mcp",
+    "copilot"
+  ],
+  "engines": {
+    "vscode": "^1.137.0"
+  },
+  "icon": "images/icon.png",
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "llm-coding-assistant.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "llm-coding-assistant.chat",
+        "title": "Start Chat"
+      },
+      {
+        "command": "llm-coding-assistant.generateCode",
+        "title": "Generate Code"
+      },
+      {
+        "command": "llm-coding-assistant.explainCode",
+        "title": "Explain Code"
+      },
+      {
+        "command": "llm-coding-assistant.fixCode",
+        "title": "Fix Code"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "llm-coding-assistant",
+          "title": "LLM Assistant",
+          "icon": "images/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "llm-coding-assistant": [
+        {
+          "id": "llm-coding-assistant.chatView",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "LLM Coding Assistant",
+      "properties": {
+        "llm-coding-assistant.apiProvider": {
+          "type": "string",
+          "enum": ["anthropic", "openai"],
+          "default": "anthropic",
+          "description": "LLM API provider to use"
+        },
+        "llm-coding-assistant.model": {
+          "type": "string",
+          "default": "claude-sonnet-5",
+          "description": "Model to use for code generation"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile && npm run build:webview",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build:webview": "cd webview && npm run build",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "openai": "^4.57.0",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.137.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "typescript-eslint": "^8.61.1",
+    "eslint": "^10.5.0",
+    "typescript": "^6.0.3",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  }
+}
