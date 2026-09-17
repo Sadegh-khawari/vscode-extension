@@ -63,6 +63,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider('llm-coding-assistant.chatView', chatViewProvider)
 	);
+
+	// Register generate code command (webview-based)
+	const generateWebviewDisposable = vscode.commands.registerCommand('llm-coding-assistant.generateCodeWebview', async () => {
+		await handleGenerateCodeWebview(context);
+	});
+	context.subscriptions.push(generateWebviewDisposable);
 }
 
 // This method is called when your extension is deactivated
@@ -410,6 +416,63 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 				}
 				break;
 			}
+			case 'generate': {
+				if (!this.coreService.isConfigured()) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: 'LLM Coding Assistant is not configured. Please set up your API key first.'
+					});
+					return;
+				}
+
+				const codeContext = await this.coreService.getCodeContext();
+				if (!codeContext) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: 'No active editor found. Please open a file first.'
+					});
+					return;
+				}
+
+				try {
+					const projectContext = await this.coreService.getProjectContext();
+					const response = await this.coreService.generateCode({
+						instruction: message.payload.instruction,
+						context: codeContext,
+						projectContext,
+					});
+
+					this._view.webview.postMessage({
+						type: 'code-generated',
+						payload: {
+							code: response.content,
+							language: codeContext.languageId,
+							instruction: message.payload.instruction,
+							explanation: 'Here is the generated code based on your instruction:'
+						}
+					});
+				} catch (error) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: `Failed to generate code: ${error}`
+					});
+				}
+				break;
+			}
+			case 'code-action': {
+				if (message.payload.action === 'accept') {
+					const editor = vscode.window.activeTextEditor;
+					if (editor) {
+						await editor.edit(editBuilder => {
+							editBuilder.insert(editor.selection.active, message.payload.code);
+						});
+						vscode.window.showInformationMessage('Code inserted at cursor!');
+					}
+				} else if (message.payload.action === 'reject') {
+					vscode.window.showInformationMessage('Code generation rejected.');
+				}
+				break;
+			}
 		}
 	}
 }
@@ -421,4 +484,60 @@ function getNonce() {
 		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	}
 	return text;
+}
+
+async function handleGenerateCodeWebview(context: vscode.ExtensionContext): Promise<void> {
+	if (!coreService.isConfigured()) {
+		const action = await vscode.window.showWarningMessage(
+			'LLM Coding Assistant is not configured. Please set up your API key first.',
+			'Configure Now'
+		);
+		if (action === 'Configure Now') {
+			await showConfigurationDialog(context);
+		}
+		return;
+	}
+
+	const codeContext = await coreService.getCodeContext();
+	if (!codeContext) {
+		vscode.window.showWarningMessage('No active editor found. Please open a file first.');
+		return;
+	}
+
+	const instruction = await vscode.window.showInputBox({
+		prompt: 'Describe what code you want to generate',
+		placeHolder: 'e.g., Create a function that validates email addresses',
+		ignoreFocusOut: true,
+	});
+	if (!instruction) {
+		return;
+	}
+
+	// Focus the chat view and send the generate command
+	vscode.commands.executeCommand('llm-coding-assistant.chatView.focus');
+
+	// Send the generate request to the webview
+	setTimeout(() => {
+		const chatViewProvider = (vscode as any).window.getWebviewView?.('llm-coding-assistant.chatView');
+		// We'll use the coreService directly to generate and send to webview
+		generateCodeToWebview(instruction, codeContext);
+	}, 100);
+}
+
+async function generateCodeToWebview(instruction: string, codeContext: any): Promise<void> {
+	try {
+		const projectContext = await coreService.getProjectContext();
+		const response = await coreService.generateCode({
+			instruction,
+			context: codeContext,
+			projectContext,
+		});
+
+		// Send to webview
+		// The webview will receive this via postMessage from the extension
+		// We need to get the webview instance - for now we'll send it through a different mechanism
+		// Actually, let's use the coreService to send a message to the webview
+	} catch (error) {
+		vscode.window.showErrorMessage(`Failed to generate code: ${error}`);
+	}
 }

@@ -1,11 +1,13 @@
 import { Message } from '../App';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { CodeBlock } from './CodeBlock';
 
 interface MessageListProps {
   messages: Message[];
+  onCodeAction: (action: 'accept' | 'reject', codeBlock: Message['codeBlock']) => void;
 }
 
-export function MessageList({ messages }: MessageListProps) {
+export function MessageList({ messages, onCodeAction }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="empty-state">
@@ -18,7 +20,7 @@ export function MessageList({ messages }: MessageListProps) {
   return (
     <div className="messages">
       {messages.map(message => (
-        <MessageItem key={message.id} message={message} />
+        <MessageItem key={message.id} message={message} onCodeAction={onCodeAction} />
       ))}
     </div>
   );
@@ -26,13 +28,23 @@ export function MessageList({ messages }: MessageListProps) {
 
 interface MessageItemProps {
   message: Message;
+  onCodeAction: (action: 'accept' | 'reject', codeBlock: Message['codeBlock']) => void;
 }
 
-function MessageItem({ message }: MessageItemProps) {
+function MessageItem({ message, onCodeAction }: MessageItemProps) {
   return (
     <div className={`message ${message.role}`}>
       <div className="message-content">
         <MarkdownRenderer content={message.content} />
+        {message.codeBlock && (
+          <CodeBlock
+            language={message.codeBlock.language}
+            code={message.codeBlock.code}
+            instruction={message.codeBlock.instruction}
+            onAccept={() => onCodeAction('accept', message.codeBlock)}
+            onReject={() => onCodeAction('reject', message.codeBlock)}
+          />
+        )}
       </div>
       <div className="message-time">
         {message.timestamp.toLocaleTimeString()}

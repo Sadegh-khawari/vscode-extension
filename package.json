@@ -2,7 +2,7 @@
   "name": "llm-coding-assistant",
   "displayName": "LLM Coding Assistant",
   "description": "A VSCode extension that connects to cloud LLMs for code generation, explanation, bug fixing, and project analysis using MCP.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "your-publisher-name",
   "repository": {
     "type": "git",
@@ -41,6 +41,10 @@
       {
         "command": "llm-coding-assistant.generateCode",
         "title": "Generate Code"
+      },
+      {
+        "command": "llm-coding-assistant.generateCodeWebview",
+        "title": "Generate Code (Webview)"
       },
       {
         "command": "llm-coding-assistant.explainCode",
