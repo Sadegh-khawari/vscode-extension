@@ -354,7 +354,23 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 			},
 			undefined
 		);
+
+		// Listen for editor selection changes and notify webview
+		vscode.window.onDidChangeTextEditorSelection(this.onSelectionChange, this);
+		vscode.window.onDidChangeActiveTextEditor(this.onSelectionChange, this);
 	}
+
+	private onSelectionChange = (): void => {
+		if (!this._view) {return;}
+
+		const editor = vscode.window.activeTextEditor;
+		const hasSelection = editor && editor.selection && !editor.selection.isEmpty;
+
+		this._view.webview.postMessage({
+			type: 'selection-changed',
+			payload: { hasSelection: !!hasSelection }
+		});
+	};
 
 	private getHtmlForWebview(webview: vscode.Webview): string {
 		// Get the built React app
@@ -506,6 +522,48 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 					this._view.webview.postMessage({
 						type: 'error',
 						payload: `Failed to explain code: ${error}`
+					});
+				}
+				break;
+			}
+			case 'fix': {
+				if (!this.coreService.isConfigured()) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: 'LLM Coding Assistant is not configured. Please set up your API key first.'
+					});
+					return;
+				}
+
+				const codeContext = await this.coreService.getCodeContext();
+				if (!codeContext || !codeContext.selection) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: 'Please select code to fix first.'
+					});
+					return;
+				}
+
+				try {
+					const projectContext = await this.coreService.getProjectContext();
+					const response = await this.coreService.fixCode({
+						errorMessage: 'Fix any bugs or issues in the selected code',
+						context: codeContext,
+						projectContext,
+					});
+
+					this._view.webview.postMessage({
+						type: 'fix-result',
+						payload: {
+							explanation: response.content,
+							code: response.content,
+							language: codeContext.languageId,
+						}
+					});
+				} catch (error) {
+					this._view.webview.postMessage({
+						type: 'error',
+						payload: `Failed to fix code: ${error}`
 					});
 				}
 				break;

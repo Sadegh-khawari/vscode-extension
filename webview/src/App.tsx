@@ -16,12 +16,18 @@ export interface Message {
     instruction: string;
   };
   explanation?: string;
+  fixResult?: {
+    explanation: string;
+    code: string;
+    language: string;
+  };
 }
 
 export function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('Ready');
+  const [hasSelection, setHasSelection] = useState(false);
   const vscode = useVSCodeAPI();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +67,20 @@ export function App() {
         }]);
         setIsLoading(false);
         setStatus('Ready');
+      } else if (message.type === 'fix-result') {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: message.payload.explanation,
+          timestamp: new Date(),
+          fixResult: {
+            explanation: message.payload.explanation,
+            code: message.payload.code,
+            language: message.payload.language,
+          },
+        }]);
+        setIsLoading(false);
+        setStatus('Ready');
       } else if (message.type === 'error') {
         setMessages(prev => [...prev, {
           id: Date.now().toString(),
@@ -70,6 +90,8 @@ export function App() {
         }]);
         setIsLoading(false);
         setStatus('Error');
+      } else if (message.type === 'selection-changed') {
+        setHasSelection(message.payload.hasSelection);
       }
     });
 
@@ -120,7 +142,14 @@ export function App() {
     });
   };
 
-  const handleCodeAction = (action: 'accept' | 'reject', codeBlock: Message['codeBlock']) => {
+  const handleFixCode = () => {
+    vscode.postMessage({
+      type: 'fix',
+      payload: {}
+    });
+  };
+
+  const handleCodeAction = (action: 'accept' | 'reject', codeBlock: Message['codeBlock'] | Message['fixResult']) => {
     vscode.postMessage({
       type: 'code-action',
       payload: { action, code: codeBlock?.code, language: codeBlock?.language }
@@ -129,7 +158,7 @@ export function App() {
 
   return (
     <div className="app">
-      <Header status={status} onExplain={handleExplainCode} />
+      <Header status={status} onExplain={handleExplainCode} onFix={hasSelection ? handleFixCode : undefined} />
       <div className="messages-container">
         <MessageList messages={messages} onCodeAction={handleCodeAction} />
         <div ref={messagesEndRef} />

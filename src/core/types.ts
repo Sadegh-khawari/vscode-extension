@@ -39,13 +39,38 @@ export interface LLMRequest {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
+  tools?: Tool[];
+  toolChoice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
 }
 
 export interface LLMResponse {
   content: string;
+  toolCalls?: ToolCall[];
   usage?: {
     inputTokens: number;
     outputTokens: number;
+  };
+}
+
+export interface Tool {
+  type: 'function';
+  function: {
+    name: string;
+    description?: string;
+    parameters: {
+      type: 'object';
+      properties?: Record<string, any>;
+      required?: string[];
+    };
+  };
+}
+
+export interface ToolCall {
+  id: string;
+  type: 'function';
+  function: {
+    name: string;
+    arguments: string;
   };
 }
 

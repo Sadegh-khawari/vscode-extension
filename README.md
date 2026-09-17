@@ -4,10 +4,10 @@ A VSCode extension that connects to cloud LLMs (Anthropic Claude, OpenAI GPT) fo
 
 ## Features
 
-- **Code Generation** - Generate code from natural language instructions
-- **Code Explanation** - Select code and get detailed explanations
-- **Bug Fixing** - Select problematic code, describe the error, get fix suggestions
-- **Chat Interface** - Interactive chat with project context awareness
+- **Code Generation** - Generate code from natural language instructions (Command Palette or Webview)
+- **Code Explanation** - Select code and get detailed explanations (Command Palette or Webview)
+- **Bug Fixing** - Select problematic code, describe the error, get fix suggestions (Command Palette or Webview)
+- **Chat Interface** - Interactive chat with project context awareness (Webview sidebar)
 - **Project Context** - Automatically includes package.json, key files, and file structure
 - **MCP Integration** - Connect to MCP servers for agentic file access
 
@@ -24,10 +24,10 @@ npm run vscode:prepublish
 
 Then press `F5` in VSCode to launch the Extension Development Host.
 
-### From VSIX (coming soon)
+### From VSIX
 
 ```bash
-code --install-extension llm-coding-assistant-0.0.1.vsix
+code --install-extension llm-coding-assistant-0.0.5.vsix
 ```
 
 ## Configuration
@@ -40,22 +40,44 @@ code --install-extension llm-coding-assistant-0.0.1.vsix
 
 ## Usage
 
-### Chat
+### Chat (Webview Sidebar)
 - Click the "LLM Assistant" icon in the Activity Bar
 - Type your question and press Enter
+- The chat uses agentic MCP tools - the LLM can discover and read files on its own
 
 ### Generate Code
+**Command Palette:**
 - Run `LLM Coding Assistant: Generate Code` from Command Palette
 - Enter your instruction (e.g., "Create a function that validates email addresses")
 
+**Webview:**
+- Click "LLM Assistant" in Activity Bar
+- Type your instruction in the input area
+- Click "Generate Code" button
+- Use "Accept" to insert at cursor or "Reject" to dismiss
+
 ### Explain Code
+**Command Palette:**
 - Select code in the editor
 - Run `LLM Coding Assistant: Explain Code` from Command Palette
 
+**Webview:**
+- Select code in the editor
+- Click "LLM Assistant" in Activity Bar
+- Click "Explain Code" button in header (appears when code is selected)
+- Explanation appears in chat
+
 ### Fix Code
+**Command Palette:**
 - Select problematic code
 - Run `LLM Coding Assistant: Fix Code` from Command Palette
 - Describe the error (e.g., "TypeError: Cannot read property of undefined")
+
+**Webview:**
+- Select problematic code in the editor
+- Click "LLM Assistant" in Activity Bar
+- Click "Fix Code" button in header (appears when code is selected)
+- Fix suggestion appears in chat with Accept/Reject buttons
 
 ## Architecture
 

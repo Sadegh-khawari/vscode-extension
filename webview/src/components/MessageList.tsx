@@ -4,7 +4,7 @@ import { CodeBlock } from './CodeBlock';
 
 interface MessageListProps {
   messages: Message[];
-  onCodeAction: (action: 'accept' | 'reject', codeBlock: Message['codeBlock']) => void;
+  onCodeAction: (action: 'accept' | 'reject', codeBlock: Message['codeBlock'] | Message['fixResult']) => void;
 }
 
 export function MessageList({ messages, onCodeAction }: MessageListProps) {
@@ -28,7 +28,7 @@ export function MessageList({ messages, onCodeAction }: MessageListProps) {
 
 interface MessageItemProps {
   message: Message;
-  onCodeAction: (action: 'accept' | 'reject', codeBlock: Message['codeBlock']) => void;
+  onCodeAction: (action: 'accept' | 'reject', codeBlock: Message['codeBlock'] | Message['fixResult']) => void;
 }
 
 function MessageItem({ message, onCodeAction }: MessageItemProps) {
@@ -43,6 +43,15 @@ function MessageItem({ message, onCodeAction }: MessageItemProps) {
             instruction={message.codeBlock.instruction}
             onAccept={() => onCodeAction('accept', message.codeBlock)}
             onReject={() => onCodeAction('reject', message.codeBlock)}
+          />
+        )}
+        {message.fixResult && (
+          <CodeBlock
+            language={message.fixResult.language}
+            code={message.fixResult.code}
+            instruction={message.fixResult.explanation}
+            onAccept={() => onCodeAction('accept', message.fixResult)}
+            onReject={() => onCodeAction('reject', message.fixResult)}
           />
         )}
       </div>

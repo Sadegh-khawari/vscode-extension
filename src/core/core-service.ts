@@ -15,7 +15,9 @@ import {
   CodeContext,
   ProjectContext,
   LLMResponse,
-  ApiProvider
+  ApiProvider,
+  Tool,
+  ToolCall,
 } from './types';
 
 export class CoreService {
@@ -100,8 +102,78 @@ export class CoreService {
       this.mcpInitialized = true;
     } catch (error) {
       console.error('Failed to initialize MCP filesystem server:', error);
-      // Don't throw - MCP is optional for Phase 1
+      // Don't throw - MCP is optional
     }
+  }
+
+  private getMCPTools(): Tool[] {
+    const tools = mcpClientManager.getAvailableTools();
+    return tools.map(tool => ({
+      type: 'function' as const,
+      function: {
+        name: tool.name,
+        description: tool.description || '',
+        parameters: tool.inputSchema,
+      },
+    }));
+  }
+
+  private async executeToolCalls(toolCalls: ToolCall[]): Promise<LLMResponse> {
+    let allResults = '';
+
+    for (const toolCall of toolCalls) {
+      try {
+        const args = JSON.parse(toolCall.function.arguments);
+        // For now, use the filesystem server
+        const result = await mcpClientManager.callTool('filesystem', toolCall.function.name, args);
+        allResults += `\nTool ${toolCall.function.name} result:\n${JSON.stringify(result, null, 2)}\n`;
+      } catch (error) {
+        allResults += `\nTool ${toolCall.function.name} error: ${error}\n`;
+      }
+    }
+
+    // Send results back to LLM for final response
+    return {
+      content: allResults,
+    };
+  }
+
+  async sendAgenticRequest(
+    request: { messages: Array<{role: 'user' | 'assistant', content: string}>; systemPrompt?: string },
+    projectContext?: ProjectContext
+  ): Promise<LLMResponse> {
+    const tools = this.getMCPTools();
+
+    // First pass - let the model decide if it needs to use tools
+    const response = await llmService.sendRequest({
+      messages: [{ role: 'user', content: request.messages[request.messages.length - 1].content }],
+      systemPrompt: request.systemPrompt,
+      temperature: 0.3,
+      maxTokens: 4096,
+      tools: tools.length > 0 ? tools : undefined,
+      toolChoice: tools.length > 0 ? 'auto' : undefined,
+    });
+
+    // If model wants to use tools, execute them and send results back
+    if (response.toolCalls && response.toolCalls.length > 0) {
+      const toolResults = await this.executeToolCalls(response.toolCalls);
+
+      // Send tool results back to LLM for final response
+      const finalResponse = await llmService.sendRequest({
+        messages: [
+          ...request.messages,
+          { role: 'assistant', content: response.content || '' },
+          { role: 'user', content: toolResults.content },
+        ],
+        systemPrompt: request.systemPrompt,
+        temperature: 0.3,
+        maxTokens: 4096,
+      });
+
+      return finalResponse;
+    }
+
+    return response;
   }
 
   async generateCode(request: GenerateCodeRequest): Promise<LLMResponse> {
@@ -144,12 +216,11 @@ export class CoreService {
     const prompt = promptBuilder.buildChatPrompt(messages, projectContext);
     const systemPrompt = LLMService.getSystemPrompt('chat');
 
-    return llmService.sendRequest({
+    // Use agentic chat with MCP tools
+    return this.sendAgenticRequest({
       messages: [{ role: 'user', content: prompt }],
       systemPrompt,
-      temperature: 0.3,
-      maxTokens: 4096,
-    });
+    }, projectContext);
   }
 
   async getCodeContext(): Promise<CodeContext | null> {
