@@ -59,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(fixDisposable);
 
 	// Register webview provider for chat view
-	const chatViewProvider = new ChatViewProvider(context.extensionUri, coreService);
+	const chatViewProvider = new ChatViewProvider(context.extensionUri, coreService, context);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider('llm-coding-assistant.chatView', chatViewProvider)
 	);
@@ -330,7 +330,8 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 
 	constructor(
 		private readonly extensionUri: vscode.Uri,
-		private readonly coreService: CoreService
+		private readonly coreService: CoreService,
+		private readonly extensionContext: vscode.ExtensionContext
 	) {}
 
 	resolveWebviewView(
@@ -566,6 +567,10 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 						payload: `Failed to fix code: ${error}`
 					});
 				}
+				break;
+			}
+			case 'configure': {
+				await showConfigurationDialog(this.extensionContext);
 				break;
 			}
 		}

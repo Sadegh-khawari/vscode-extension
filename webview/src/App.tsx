@@ -149,6 +149,13 @@ export function App() {
     });
   };
 
+  const handleConfigure = () => {
+    vscode.postMessage({
+      type: 'configure',
+      payload: {}
+    });
+  };
+
   const handleCodeAction = (action: 'accept' | 'reject', codeBlock: Message['codeBlock'] | Message['fixResult']) => {
     vscode.postMessage({
       type: 'code-action',
@@ -158,7 +165,7 @@ export function App() {
 
   return (
     <div className="app">
-      <Header status={status} onExplain={handleExplainCode} onFix={hasSelection ? handleFixCode : undefined} />
+      <Header status={status} onExplain={handleExplainCode} onFix={hasSelection ? handleFixCode : undefined} onConfigure={handleConfigure} />
       <div className="messages-container">
         <MessageList messages={messages} onCodeAction={handleCodeAction} />
         <div ref={messagesEndRef} />

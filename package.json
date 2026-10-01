@@ -53,6 +53,10 @@
       {
         "command": "llm-coding-assistant.fixCode",
         "title": "Fix Code"
+      },
+      {
+        "command": "llm-coding-assistant.configure",
+        "title": "Configure"
       }
     ],
     "viewsContainers": {
