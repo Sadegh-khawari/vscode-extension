@@ -31,8 +31,9 @@ export function App() {
   const vscode = useVSCodeAPI();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Register message listener once (empty deps). Cleanup on unmount.
   useEffect(() => {
-    window.addEventListener('message', event => {
+    const handler = (event: MessageEvent) => {
       const message = event.data;
       if (message.type === 'chat-response') {
         setMessages(prev => [...prev, {
@@ -93,9 +94,14 @@ export function App() {
       } else if (message.type === 'selection-changed') {
         setHasSelection(message.payload.hasSelection);
       }
-    });
+    };
 
-    // Scroll to bottom on messages change
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
