@@ -145,8 +145,9 @@ export class CoreService {
     const tools = this.getMCPTools();
 
     // First pass - let the model decide if it needs to use tools
+    // Use full conversation history, not just the last message
     const response = await llmService.sendRequest({
-      messages: [{ role: 'user', content: request.messages[request.messages.length - 1].content }],
+      messages: request.messages,
       systemPrompt: request.systemPrompt,
       temperature: 0.3,
       maxTokens: 4096,

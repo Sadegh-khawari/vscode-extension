@@ -416,8 +416,10 @@ class ChatViewProvider implements vscode.WebviewViewProvider {
 				const projectContext = await this.coreService.getProjectContext();
 
 				try {
+					// Use full conversation history if provided, otherwise fall back to single message
+					const messages = message.payload.messages || [{ role: 'user', content: message.payload.message }];
 					const response = await this.coreService.chat(
-						[{ role: 'user', content: message.payload.message }],
+						messages,
 						projectContext
 					);
 

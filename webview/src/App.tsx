@@ -108,18 +108,26 @@ export function App() {
   const handleSend = (text: string) => {
     if (!text.trim() || isLoading) return;
 
-    setMessages(prev => [...prev, {
+    const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: text,
       timestamp: new Date(),
-    }]);
+    };
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setStatus('Thinking...');
 
+    // Send full conversation history (excluding the assistant messages we just added for display)
+    const conversationHistory = messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({ role: m.role, content: m.content }));
+
+    conversationHistory.push({ role: 'user', content: text });
+
     vscode.postMessage({
       type: 'chat',
-      payload: { message: text }
+      payload: { messages: conversationHistory }
     });
   };
 
